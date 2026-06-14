@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nepal Futsal Team — Chat Analysis Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; padding: 2rem; }
+  h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+  .metric { background: #fff; border-radius: 8px; border: 0.5px solid #e0e0d8; padding: 1rem; text-align: center; }
+  .metric-label { font-size: 13px; color: #888; margin-bottom: 4px; }
+  .metric-value { font-size: 24px; font-weight: 500; }
+  .metric-sub { font-size: 12px; color: #888; margin-top: 2px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
+  .card { background: #fff; border-radius: 12px; border: 0.5px solid #e0e0d8; padding: 1.25rem; }
+  .card-title { font-size: 14px; font-weight: 500; color: #555; margin-bottom: 12px; }
+  .chart-wrap { position: relative; width: 100%; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; font-size: 11px; color: #666; }
+  .legend span { display: flex; align-items: center; gap: 4px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+  #wordcloud { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px; background: #f5f5f0; border-radius: 8px; min-height: 180px; }
+  .insight { background: #e8f5e9; border-left: 3px solid #1D9E75; border-radius: 0 8px 8px 0; padding: 0.75rem 1rem; margin-bottom: 8px; font-size: 13px; color: #2e7d32; }
+  @media (max-width: 700px) { .metrics { grid-template-columns: 1fr 1fr; } .grid-2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<h1>Nepal Futsal Team — Chat Analysis</h1>
+<p class="subtitle">Behaviour analysis of 4,034 WhatsApp messages · Nov 2025 – Jun 2026</p>
+
+<div class="metrics">
+  <div class="metric"><div class="metric-label">Total messages</div><div class="metric-value">4,034</div></div>
+  <div class="metric"><div class="metric-label">Active members</div><div class="metric-value">20+</div></div>
+  <div class="metric"><div class="metric-label">Top sender</div><div class="metric-value" style="font-size:16px">Sumesh S.</div><div class="metric-sub">1,160 messages</div></div>
+  <div class="metric"><div class="metric-label">Most active day</div><div class="metric-value" style="font-size:16px">Friday</div><div class="metric-sub">773 messages</div></div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">Messages per person (top 10)</div>
+    <div class="legend">
+      <span><span class="legend-dot" style="background:#3266ad"></span>Named members</span>
+      <span><span class="legend-dot" style="background:#73726c"></span>Phone numbers</span>
+    </div>
+    <div class="chart-wrap" style="height:300px"><canvas id="senderChart" role="img" aria-label="Top senders bar chart">Sumesh Shrestha leads with 1160 messages.</canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Activity by hour of day</div>
+    <div class="chart-wrap" style="height:320px"><canvas id="hourChart" role="img" aria-label="Hourly activity line chart">Peaks at 10am and 5-6pm.</canvas></div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">Messages by day of week</div>
+    <div class="chart-wrap" style="height:240px"><canvas id="dayChart" role="img" aria-label="Day of week bar chart">Friday most active with 773 messages.</canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Monthly activity trend</div>
+    <div class="chart-wrap" style="height:240px"><canvas id="monthChart" role="img" aria-label="Monthly trend line chart">Peak in Jan 2026 with 951 messages.</canvas></div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">Emoji usage (top 10)</div>
+    <div class="chart-wrap" style="height:260px"><canvas id="emojiChart" role="img" aria-label="Emoji usage bar chart">Siddhartha Das leads with 117 emojis.</canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Top topics & words</div>
+    <div id="wordcloud"></div>
+  </div>
+</div>
+
+<div style="margin-top: 1.5rem;">
+  <div class="card">
+    <div class="card-title">Key insights</div>
+    <div style="margin-top: 8px;">
+      <div class="insight">Sumesh Shrestha drives 29% of all group conversation — the clear social engine of the team.</div>
+      <div class="insight">The group peaks at 10am and 5–6pm daily — used for morning check-ins and evening game planning.</div>
+      <div class="insight">Friday has 71% more messages than Sunday — coordination spikes before weekend games.</div>
+      <div class="insight">Dec 2025–Jan 2026 was peak season with 1,893 messages in two months.</div>
+      <div class="insight">Top words: futsal, vote, poll, morning — this group is primarily a scheduling and coordination tool.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const textColor = '#888';
+const gridColor = 'rgba(0,0,0,0.06)';
+const baseOpts = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } },
+    y: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } }
+  }
+};
+
+new Chart(document.getElementById('senderChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Sumesh S.', '+971 52...', 'Sagar F.', 'Siddhartha', 'Akash G.', '+977 984-418', '+977 982-524', '+977 985-503', 'Bakki F.', 'Ujjwal F.'],
+    datasets: [{ data: [1160,534,496,441,244,153,128,108,99,81], backgroundColor: ['#3266ad','#73726c','#3266ad','#3266ad','#3266ad','#73726c','#73726c','#73726c','#3266ad','#3266ad'] }]
+  },
+  options: { ...baseOpts, indexAxis: 'y', scales: { x: baseOpts.scales.x, y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } } } }
+});
+
+const hourData = {0:47,1:17,2:19,3:2,4:5,5:23,6:97,7:46,8:192,9:307,10:354,11:273,12:198,13:220,14:178,15:138,16:281,17:398,18:383,19:237,20:295,21:153,22:132,23:39};
+new Chart(document.getElementById('hourChart'), {
+  type: 'line',
+  data: {
+    labels: Array.from({length:24},(_,h) => h===0?'12am':h<12?h+'am':h===12?'12pm':(h-12)+'pm'),
+    datasets: [{ data: Array.from({length:24},(_,h) => hourData[h]||0), borderColor: '#3266ad', backgroundColor: 'rgba(50,102,173,0.1)', fill: true, tension: 0.4, pointRadius: 2 }]
+  },
+  options: baseOpts
+});
+
+new Chart(document.getElementById('dayChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    datasets: [{ data: [574,522,532,622,773,560,451], backgroundColor: ['#73726c','#73726c','#73726c','#73726c','#3266ad','#73726c','#73726c'] }]
+  },
+  options: { ...baseOpts, scales: { x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, autoSkip: false } }, y: baseOpts.scales.y } }
+});
+
+new Chart(document.getElementById('monthChart'), {
+  type: 'line',
+  data: {
+    labels: ['Nov 25','Dec 25','Jan 26','Feb 26','Mar 26','Apr 26','May 26','Jun 26'],
+    datasets: [{ data: [437,942,951,617,315,383,317,72], borderColor: '#1D9E75', backgroundColor: 'rgba(29,158,117,0.1)', fill: true, tension: 0.4, pointRadius: 3 }]
+  },
+  options: { ...baseOpts, scales: { x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, autoSkip: false, maxRotation: 45 } }, y: baseOpts.scales.y } }
+});
+
+new Chart(document.getElementById('emojiChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Siddhartha','Sumesh S.','Akash G.','Sagar F.','+977 982','Ujjwal F.','+977 984-418','+977 980','+977 981','Bakki F.'],
+    datasets: [{ data: [117,116,76,56,46,34,28,16,14,13], backgroundColor: '#D4537E' }]
+  },
+  options: { ...baseOpts, indexAxis: 'y', scales: { x: baseOpts.scales.x, y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } } } }
+});
+
+const words = [['futsal',1169],['chaudhary',414],['gupta',412],['sagar',268],['vote',257],['shrestha',256],['morning',204],['jana',203],['madan',184],['hajur',183],['sanjay',178],['gurung',175],['poll',168],['rijan',163],['bikash',152],['siddhartha',158]];
+const colors = ['#3266ad','#1D9E75','#D4537E','#D85A30','#534AB7','#BA7517'];
+const maxCount = Math.max(...words.map(w => w[1]));
+const wc = document.getElementById('wordcloud');
+words.sort((a,b) => b[1]-a[1]).forEach(([word, count], i) => {
+  const size = Math.round(11 + (count / maxCount) * 20);
+  const span = document.createElement('span');
+  span.textContent = word;
+  span.title = count + ' times';
+  span.style.cssText = `font-size:${size}px; color:${colors[i%colors.length]}; font-weight:${count>300?500:400}; cursor:default;`;
+  wc.appendChild(span);
+});
+</script>
+</body>
+</html>
